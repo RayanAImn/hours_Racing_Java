@@ -1,0 +1,20 @@
+@"
+# Maven/Java
+target/
+*.class
+*.log
+.idea/
+.vscode/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+"@ | Out-File -Encoding utf8 .gitignore
+
+# Stage & commit ONLY this project's files
+git add .
+git commit -m "Initial commit (project-only)"
