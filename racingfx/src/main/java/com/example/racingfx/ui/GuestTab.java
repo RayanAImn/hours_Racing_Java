@@ -1,7 +1,11 @@
 package com.example.racingfx.ui;
 
-import com.example.racingfx.dao.ReportsDao;
+import com.example.racingfx.dao.GuestDao;
+import com.example.racingfx.dao.GuestDaoImpl;
 import com.example.racingfx.model.HorseTrainerInfo;
+import com.example.racingfx.model.TrackStats;
+import com.example.racingfx.model.TrainerWinnings;
+import com.example.racingfx.model.WinningTrainerInfo;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -9,10 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class GuestTab extends Tab {
   public GuestTab() {
@@ -30,7 +31,7 @@ public class GuestTab extends Tab {
     HBox controls = new HBox(8, ownerLname, search);
     TableView<HorseTrainerInfo> horsesTable = new TableView<>();
     TableColumn<HorseTrainerInfo,String> c1 = new TableColumn<>("Horse"); c1.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getHorseName()));
-    TableColumn<HorseTrainerInfo,String> c2 = new TableColumn<>("Age"); c2.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(String.valueOf(v.getValue().getAge())));
+    TableColumn<HorseTrainerInfo,String> c2 = new TableColumn<>("Age"); c2.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getAge()==null?"":String.valueOf(v.getValue().getAge())));
     TableColumn<HorseTrainerInfo,String> c3 = new TableColumn<>("Trainer First"); c3.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getTrainerFirstName()));
     TableColumn<HorseTrainerInfo,String> c4 = new TableColumn<>("Trainer Last"); c4.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getTrainerLastName()));
     horsesTable.getColumns().addAll(c1,c2,c3,c4);
@@ -39,87 +40,80 @@ public class GuestTab extends Tab {
     horsesBox.setCenter(horsesTable);
     horsesPane.setContent(horsesBox);
 
-    // Output area for generic JSON results
-    TextArea output = new TextArea();
-    output.setPromptText("Results JSON will appear here...");
-    output.setPrefRowCount(8);
-
-    // Winning trainers
+    // Winning trainers table
     TitledPane winnersPane = new TitledPane(); winnersPane.setText("Winning Trainers");
+    TableView<WinningTrainerInfo> winnersTable = new TableView<>();
+    winnersTable.getColumns().addAll(
+        makeCol("Trainer First", v -> v.getTrainerFirstName()),
+        makeCol("Trainer Last", v -> v.getTrainerLastName()),
+        makeCol("Horse", v -> v.getHorseName()),
+        makeCol("Race", v -> v.getRaceName()),
+        makeCol("Track", v -> v.getTrackName()),
+        makeCol("Date", v -> v.getRaceDate()==null?"":v.getRaceDate().toString()),
+        makeCol("Time", v -> v.getRaceTime()==null?"":v.getRaceTime().toString())
+    );
     Button loadWinners = new Button("Load");
-    VBox winnersBox = new VBox(8, loadWinners, new Label("See results area below"));
-    winnersPane.setContent(winnersBox);
+    VBox winnersBox = new VBox(8, loadWinners, winnersTable); winnersPane.setContent(winnersBox);
 
-    // Trainer winnings
+    // Trainer winnings table
     TitledPane twPane = new TitledPane(); twPane.setText("Trainer Winnings");
+    TableView<TrainerWinnings> twTable = new TableView<>();
+    TableColumn<TrainerWinnings,String> tw1 = new TableColumn<>("Trainer First"); tw1.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getTrainerFirstName()));
+    TableColumn<TrainerWinnings,String> tw2 = new TableColumn<>("Trainer Last"); tw2.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getTrainerLastName()));
+    TableColumn<TrainerWinnings,String> tw3 = new TableColumn<>("Total Winnings"); tw3.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(String.valueOf(v.getValue().getTotalWinnings())));
+    twTable.getColumns().addAll(tw1,tw2,tw3);
     Button loadTW = new Button("Load");
-    VBox twBox = new VBox(8, loadTW, new Label("See results area below"));
-    twPane.setContent(twBox);
+    VBox twBox = new VBox(8, loadTW, twTable); twPane.setContent(twBox);
 
-    // Track stats
+    // Track stats table
     TitledPane tsPane = new TitledPane(); tsPane.setText("Track Stats");
+    TableView<TrackStats> tsTable = new TableView<>();
+    TableColumn<TrackStats,String> ts1 = new TableColumn<>("Track"); ts1.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(v.getValue().getTrackName()));
+    TableColumn<TrackStats,String> ts2 = new TableColumn<>("Races"); ts2.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(String.valueOf(v.getValue().getRaceCount())));
+    TableColumn<TrackStats,String> ts3 = new TableColumn<>("Participants"); ts3.setCellValueFactory(v-> new javafx.beans.property.SimpleStringProperty(String.valueOf(v.getValue().getTotalParticipants())));
+    tsTable.getColumns().addAll(ts1,ts2,ts3);
     Button loadTS = new Button("Load");
-    VBox tsBox = new VBox(8, loadTS, new Label("See results area below"));
-    tsPane.setContent(tsBox);
+    VBox tsBox = new VBox(8, loadTS, tsTable); tsPane.setContent(tsBox);
 
-    // Wire actions
-    ReportsDao reports = new ReportsDao();
+    // DAO
+    GuestDao guest = new GuestDaoImpl();
 
     search.setOnAction(e -> {
       try {
-        List<Map<String,Object>> maps = reports.horsesByOwnerLastName(ownerLname.getText().trim());
-        List<HorseTrainerInfo> list = new ArrayList<>();
-        for (Map<String,Object> m : maps) {
-          String horse = (String)m.getOrDefault("horseName", "");
-          Integer age = m.get("age") == null ? null : ((Number)m.get("age")).intValue();
-          String tf = (String)m.getOrDefault("trainerF", "");
-          String tl = (String)m.getOrDefault("trainerL", "");
-          list.add(new HorseTrainerInfo(horse, age, tf, tl));
-        }
+        List<HorseTrainerInfo> list = guest.horsesByOwnerLastName(ownerLname.getText().trim());
         horsesTable.setItems(FXCollections.observableArrayList(list));
-        output.setText(toJson(maps));
-      } catch (SQLException ex) {
-        output.setText("Error: " + ex.getMessage());
+      } catch (Exception ex) {
+        showAlert("Error", ex.getMessage());
       }
     });
 
     loadWinners.setOnAction(e -> {
-      try { output.setText(toJson(reports.winningTrainers())); }
-      catch (SQLException ex) { output.setText("Error: " + ex.getMessage()); }
+      try { winnersTable.setItems(FXCollections.observableArrayList(guest.winningTrainers())); }
+      catch (Exception ex) { showAlert("Error", ex.getMessage()); }
     });
 
     loadTW.setOnAction(e -> {
-      try { output.setText(toJson(reports.trainerWinnings())); }
-      catch (SQLException ex) { output.setText("Error: " + ex.getMessage()); }
+      try { twTable.setItems(FXCollections.observableArrayList(guest.trainerWinnings())); }
+      catch (Exception ex) { showAlert("Error", ex.getMessage()); }
     });
 
     loadTS.setOnAction(e -> {
-      try { output.setText(toJson(reports.trackStats())); }
-      catch (SQLException ex) { output.setText("Error: " + ex.getMessage()); }
+      try { tsTable.setItems(FXCollections.observableArrayList(guest.trackStats())); }
+      catch (Exception ex) { showAlert("Error", ex.getMessage()); }
     });
 
-    root.getChildren().addAll(horsesPane, winnersPane, twPane, tsPane, new Label("Results:"), output);
+    root.getChildren().addAll(horsesPane, winnersPane, twPane, tsPane);
     setContent(new ScrollPane(root));
   }
 
-  private static String toJson(List<Map<String,Object>> rows) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("[");
-    for (int i=0;i<rows.size();i++) {
-      if (i>0) sb.append(',');
-      Map<String,Object> m = rows.get(i);
-      sb.append("{");
-      int j=0; for (Map.Entry<String,Object> e : m.entrySet()) {
-        if (j++>0) sb.append(',');
-        sb.append('"').append(e.getKey()).append('"').append(":");
-        Object v = e.getValue();
-        if (v==null) sb.append("null");
-        else if (v instanceof Number || v instanceof Boolean) sb.append(v.toString());
-        else sb.append('"').append(String.valueOf(v).replace("\"","\\\"")).append('"');
-      }
-      sb.append("}");
-    }
-    sb.append("]");
-    return sb.toString();
+  private static <T> TableColumn<T,String> makeCol(String name, java.util.function.Function<T,String> fn) {
+    TableColumn<T,String> c = new TableColumn<>(name);
+    c.setCellValueFactory(v -> new javafx.beans.property.SimpleStringProperty(fn.apply(v.getValue())));
+    return c;
+  }
+
+  private static void showAlert(String title, String msg) {
+    Alert a = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
+    a.setHeaderText(title); a.showAndWait();
   }
 }

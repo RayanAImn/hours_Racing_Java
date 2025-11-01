@@ -8,9 +8,11 @@ import javafx.stage.Stage;
 public class MainApp extends Application {
   @Override public void start(Stage stage) {
     MainView view = new MainView();
-    stage.setScene(new Scene(view, 960, 640));
+    Scene scene = new Scene(view, 960, 640);
     stage.setTitle("RacingFX");
+    stage.setScene(scene);
     stage.show();
   }
-  public static void main(String[] args){ launch(args); }
+
+  public static void main(String[] args) { launch(args); }
 }
