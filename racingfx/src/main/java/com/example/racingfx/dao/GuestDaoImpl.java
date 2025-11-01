@@ -1,6 +1,6 @@
 package com.example.racingfx.dao;
 
-import com.example.racingfx.db.Database;
+import com.example.racingfx.db.Db;
 import com.example.racingfx.model.HorseTrainerInfo;
 import com.example.racingfx.model.TrainerWinnings;
 import com.example.racingfx.model.TrackStats;
@@ -23,7 +23,7 @@ public class GuestDaoImpl implements GuestDao {
         "LEFT JOIN Trainer t ON t.stableId = h.stableId \n" +
         "WHERE o.lname = ?";
     List<HorseTrainerInfo> out = new ArrayList<>();
-    try (Connection c = Database.getConnection();
+    try (Connection c = Db.get();
          PreparedStatement ps = c.prepareStatement(sql)) {
       ps.setString(1, lastName);
       try (ResultSet rs = ps.executeQuery()) {
@@ -48,9 +48,9 @@ public class GuestDaoImpl implements GuestDao {
         "JOIN Horse h ON h.stableId = t.stableId \n" +
         "JOIN RaceResults rr ON rr.horseId = h.horseId \n" +
         "JOIN Race r ON r.raceId = rr.raceId \n" +
-        "WHERE rr.results = '1'"; // adjust if winners encoded differently
+        "WHERE rr.results = 'first'"; // standardized to 'first'
     List<WinningTrainerInfo> out = new ArrayList<>();
-    try (Connection c = Database.getConnection();
+    try (Connection c = Db.get();
          PreparedStatement ps = c.prepareStatement(sql);
          ResultSet rs = ps.executeQuery()) {
       while (rs.next()) {
@@ -75,7 +75,7 @@ public class GuestDaoImpl implements GuestDao {
         "GROUP BY t.trainerId, t.fname, t.lname \n" +
         "ORDER BY totalWinnings DESC";
     List<TrainerWinnings> out = new ArrayList<>();
-    try (Connection c = Database.getConnection();
+    try (Connection c = Db.get();
          PreparedStatement ps = c.prepareStatement(sql);
          ResultSet rs = ps.executeQuery()) {
       while (rs.next()) {
@@ -93,7 +93,7 @@ public class GuestDaoImpl implements GuestDao {
         "LEFT JOIN RaceResults rr ON rr.raceId = r.raceId \n" +
         "GROUP BY r.trackName";
     List<TrackStats> out = new ArrayList<>();
-    try (Connection c = Database.getConnection();
+    try (Connection c = Db.get();
          PreparedStatement ps = c.prepareStatement(sql);
          ResultSet rs = ps.executeQuery()) {
       while (rs.next()) {
@@ -105,4 +105,3 @@ public class GuestDaoImpl implements GuestDao {
     return out;
   }
 }
-
