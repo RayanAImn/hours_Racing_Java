@@ -1,19 +1,28 @@
 package com.example.racingfx.ui;
 
+import java.util.List;
+
 import com.example.racingfx.dao.GuestDao;
 import com.example.racingfx.dao.GuestDaoImpl;
 import com.example.racingfx.model.HorseTrainerInfo;
 import com.example.racingfx.model.TrackStats;
 import com.example.racingfx.model.TrainerWinnings;
 import com.example.racingfx.model.WinningTrainerInfo;
+
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-
-import java.util.List;
 
 public class GuestTab extends Tab {
   public GuestTab() {
@@ -91,7 +100,7 @@ public class GuestTab extends Tab {
       try { winnersTable.setItems(FXCollections.observableArrayList(guest.winningTrainers())); }
       catch (Exception ex) { showAlert("Error", ex.getMessage()); }
     });
-
+  
     loadTW.setOnAction(e -> {
       try { twTable.setItems(FXCollections.observableArrayList(guest.trainerWinnings())); }
       catch (Exception ex) { showAlert("Error", ex.getMessage()); }

@@ -1,16 +1,27 @@
 package com.example.racingfx.ui;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.time.LocalDate;
+
 import com.example.racingfx.dao.AdminDao;
+
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-
-import java.sql.Date;
-import java.sql.Time;
-import java.time.LocalDate;
 
 public class AdminTab extends Tab {
   public AdminTab() {
@@ -132,8 +143,8 @@ public class AdminTab extends Tab {
           return;
         }
         trackVal = trackVal.trim();
-        String newRaceId = dao.addRaceWithResults(
-            raceNameVal, trackVal, sqlDate, sqlTime, java.util.List.of());
+        String newRaceId = dao.addRace(
+            raceNameVal, trackVal, sqlDate, sqlTime);
         logs.appendText("Added race " + newRaceId + "\n");
         // Load and show the inserted row
         com.example.racingfx.model.Race rec = dao.findRace(newRaceId);
