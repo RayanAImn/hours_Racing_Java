@@ -293,4 +293,32 @@ public class AdminDao {
   }
   // helper record for results
   public record ResultRow(String horseId, String place, double prize) {}
+
+  public void addRaceResult(String raceId, String horseId, String result, double prize) throws SQLException {
+    Connection c = Db.get();
+    try {
+        // Check if the race already has results
+        try (PreparedStatement checkStmt = c.prepareStatement(
+                "SELECT COUNT(*) AS resultCount FROM RaceResults WHERE raceId = ?")) {
+            checkStmt.setString(1, raceId);
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next() && rs.getInt("resultCount") > 0) {
+                    throw new SQLException("Race already has results. Cannot add new results.");
+                }
+            }
+        }
+
+        // Add the race result
+        try (PreparedStatement insertStmt = c.prepareStatement(
+                "INSERT INTO RaceResults (raceId, horseId, results, prize) VALUES (?, ?, ?, ?)")) {
+            insertStmt.setString(1, raceId);
+            insertStmt.setString(2, horseId);
+            insertStmt.setString(3, result);
+            insertStmt.setDouble(4, prize);
+            insertStmt.executeUpdate();
+        }
+    } finally {
+        try { c.close(); } catch (SQLException ignored) {}
+    }
+  }
 }
