@@ -1,6 +1,7 @@
 package com.example.racingfx.ui;
 
 import java.sql.Date;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.time.LocalDate;
 
@@ -200,7 +201,56 @@ public class AdminTab extends Tab {
 
     refreshRecent.setOnAction(e -> logs.appendText("Use Add Race to populate the recent table.\n"));
 
-    formColumn.getChildren().addAll(addRacePane, delOwnerPane, moveHorsePane, approvePane);
+    // Add Race Result
+    TitledPane addResultPane = new TitledPane();
+    addResultPane.setText("Add Race Result");
+    GridPane addResultGrid = new GridPane();
+    addResultGrid.setHgap(8); addResultGrid.setVgap(8);
+    TextField resultRaceId = new TextField(); resultRaceId.setPromptText("raceId");
+    TextField resultHorseId = new TextField(); resultHorseId.setPromptText("horseId");
+    TextField resultPlace = new TextField(); resultPlace.setPromptText("Result (e.g., 1st, 2nd)");
+    TextField resultPrize = new TextField(); resultPrize.setPromptText("Prize (e.g., 100.00)");
+    Button addResultBtn = new Button("Add Result");
+    addResultGrid.addRow(0, new Label("Race ID"), resultRaceId);
+    addResultGrid.addRow(1, new Label("Horse ID"), resultHorseId);
+    addResultGrid.addRow(2, new Label("Result"), resultPlace);
+    addResultGrid.addRow(3, new Label("Prize"), resultPrize);
+    addResultGrid.add(addResultBtn, 1, 4);
+    addResultPane.setContent(addResultGrid);
+    addResultPane.setMaxWidth(Double.MAX_VALUE);
+
+    // Wire action for Add Result button
+    addResultBtn.setOnAction(e -> {
+        try {
+            String raceId = resultRaceId.getText() == null ? "" : resultRaceId.getText().trim();
+            String horseIdResult = resultHorseId.getText() == null ? "" : resultHorseId.getText().trim(); // Renamed variable
+            String place = resultPlace.getText() == null ? "" : resultPlace.getText().trim();
+            String prizeText = resultPrize.getText() == null ? "" : resultPrize.getText().trim();
+
+            if (raceId.isEmpty() || horseIdResult.isEmpty() || place.isEmpty() || prizeText.isEmpty()) {
+                logs.appendText("All fields are required to add a race result.\n");
+                return;
+            }
+
+            double prize;
+            try {
+                prize = Double.parseDouble(prizeText);
+            } catch (NumberFormatException ex) {
+                logs.appendText("Invalid prize amount. Please enter a valid number.\n");
+                return;
+            }
+
+            AdminDao dao = new AdminDao();
+            dao.addRaceResult(raceId, horseIdResult, place, prize); // Use renamed variable
+            logs.appendText("Added result for race " + raceId + " and horse " + horseIdResult + ".\n");
+        } catch (SQLException ex) {
+            logs.appendText("Add result error: " + ex.getMessage() + "\n");
+        } catch (Exception ex) {
+            logs.appendText("Unexpected error: " + ex.getMessage() + "\n");
+        }
+    });
+
+    formColumn.getChildren().addAll(addRacePane, delOwnerPane, moveHorsePane, approvePane, addResultPane);
     outputColumn.getChildren().addAll(recentPane, logs);
     VBox.setVgrow(recentPane, Priority.ALWAYS);
     columns.getChildren().addAll(formColumn, outputColumn);
@@ -255,5 +305,4 @@ public class AdminTab extends Tab {
     }
   }
 
-  // Removed JSON input for results to simplify race creation
 }
